@@ -350,10 +350,14 @@ class IdentityAssigner:
         """Clear all non-forced names in the nuclei record.
 
         Names set via assigned_id are preserved (forced names survive renaming).
+        Polar body labels (identity containing "polar") are also preserved so
+        that founder detection can exclude them from the alive-cell count.
         """
         for t in range(self.starting_index, min(self.ending_index, len(self.nuclei_record))):
             for nuc in self.nuclei_record[t]:
                 if nuc.assigned_id:
+                    continue
+                if "polar" in nuc.identity.lower():
                     continue
                 nuc.identity = ""
 

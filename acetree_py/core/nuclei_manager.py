@@ -118,12 +118,15 @@ class NucleiManager:
         # Load nuclei from ZIP
         mgr.load(config.zip_file)
 
-        # Load AuxInfo — try alongside the zip file first, then alongside
-        # the config file (handles cases where the zip has been copied to a
-        # different location than what the config originally referenced).
+        # Load AuxInfo — try multiple locations in priority order:
+        # 1. Alongside the zip file (original location)
+        # 2. Alongside the config XML using the zip stem (zip copied elsewhere)
+        # 3. Alongside the config XML using the XML stem (zip name differs from
+        #    the dataset name, e.g. "*-edit.zip" vs "*AuxInfo.csv")
         for candidate in (
             config.zip_file.with_suffix(""),
             config.config_file.parent / config.zip_file.with_suffix("").name,
+            config.config_file.with_suffix(""),
         ):
             ai = load_auxinfo(candidate)
             if ai.axis or ai.is_v2:
@@ -139,11 +142,11 @@ class NucleiManager:
             zip_path: Path to the nuclei ZIP file.
         """
         logger.info("Loading nuclei from %s", zip_path)
-        self.nuclei_record = read_nuclei_zip(zip_path)
+        self.nuclei_record, start_time = read_nuclei_zip(zip_path)
 
         if self.nuclei_record:
-            self.movie.start_time = 1
-            self.movie.end_time = len(self.nuclei_record)
+            self.movie.start_time = start_time
+            self.movie.end_time = start_time + len(self.nuclei_record) - 1
             logger.info(
                 "Loaded %d timepoints (%d-%d)",
                 len(self.nuclei_record),
@@ -212,15 +215,15 @@ class NucleiManager:
         return len(self.nuclei_record)
 
     def nuclei_at(self, time: int) -> list[Nucleus]:
-        """Get nuclei at a timepoint (1-based).
+        """Get nuclei at a timepoint.
 
         Args:
-            time: 1-based timepoint.
+            time: Timepoint number (matches image file numbering).
 
         Returns:
             List of Nucleus objects at that timepoint, or empty list.
         """
-        idx = time - 1
+        idx = time - self.movie.start_time
         if 0 <= idx < len(self.nuclei_record):
             return self.nuclei_record[idx]
         return []

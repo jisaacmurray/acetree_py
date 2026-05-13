@@ -32,7 +32,7 @@ def read_nuclei_zip(
     nuc_dir: str = "nuclei/",
     *,
     old_format: bool = False,
-) -> list[list[Nucleus]]:
+) -> tuple[list[list[Nucleus]], int]:
     """Read all nuclei from a ZIP archive.
 
     Args:
@@ -42,9 +42,10 @@ def read_nuclei_zip(
         old_format: If True, parse using the old column layout.
 
     Returns:
-        A list of nucleus lists, indexed by timepoint (0-based).
-        nuclei_record[0] contains nuclei for the first timepoint, etc.
-        Each timepoint's list is ordered by the nucleus index in the file.
+        A tuple of (nuclei_record, min_time) where nuclei_record is a list
+        of nucleus lists indexed sequentially (nuclei_record[0] = first
+        timepoint found, etc.) and min_time is the actual first timepoint
+        number from the data (used to convert 1-based display time → index).
 
     Raises:
         FileNotFoundError: If the ZIP file does not exist.
@@ -78,7 +79,7 @@ def read_nuclei_zip(
 
         if not entries:
             logger.warning("No nuclei entries found in ZIP: %s", zip_path)
-            return []
+            return [], 1
 
         # Sort by timepoint
         entries.sort(key=lambda x: x[0])
@@ -108,7 +109,7 @@ def read_nuclei_zip(
         max_time,
         sum(len(nl) for nl in nuclei_record),
     )
-    return nuclei_record
+    return nuclei_record, min_time
 
 
 def _read_entry(

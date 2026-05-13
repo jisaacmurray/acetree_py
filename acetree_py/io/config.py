@@ -114,8 +114,8 @@ class AceTreeConfig:
     expr_corr: str = "none"
     use_zip: int = 0
     use_stack: int = 0
-    split: int = 1
-    flip: int = 1
+    split: int = 0
+    flip: int = 0
     start_time: int = 1
     angle: float = -1.0
     stack_interleaved: bool = False
